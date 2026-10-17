@@ -130,6 +130,7 @@
         <input type="checkbox" id="wakeOn" checked>
       </div>
     </div>
+    <button class="btn-sub btn-gray" style="width:100%;" id="btnResetAll">⟲ 重置到初始状态</button>
     <div class="tip">起点 A 柱（从上到下 小→大），终点 C 柱<br>每人用自己的手机，各自推进自己的步骤</div>
   </div>
 
@@ -153,6 +154,7 @@
         <button class="btn-sub" id="btnUndo">↩ 撤销上一步</button>
         <button class="btn-sub btn-gray" id="btnResetMe">⟲ 重置我的进度</button>
       </div>
+      <button class="btn-sub btn-gray" style="width:100%;margin-top:10px;" id="btnResetAll2">⟲ 重置到初始状态（清空全部）</button>
       <div class="tip">跑回来点绿按钮，自动切到你的下一步</div>
     </div>
 
@@ -289,6 +291,19 @@ function onDone(){
   if(myNext(i) === null){ renderFinish(i); return; }
   renderMe();
 }
+/* 重置到初始状态：清空所有人的进度、名字和选号，回到选号页 */
+function resetAll(){
+  if(!confirm('重置到初始状态？\n所有人的进度、名字和你的选号都会清空，回到刚打开的样子。')) return;
+  try{ localStorage.removeItem(KEY); }catch(e){}
+  S = {
+    names:['队员1','队员2','队员3','队员4','队员5'],
+    me:null,
+    done:[0,0,0,0,0],
+    voice:S.voice, wake:S.wake     // 语音/常亮属于个人偏好，保留
+  };
+  save();
+  show('pagePick'); renderPick();
+}
 function doUndo(){
   const i = S.me;
   if(S.done[i] <= 0) return;
@@ -322,6 +337,8 @@ document.getElementById('btnDone').onclick    = onDone;
 document.getElementById('btnUndo').onclick    = doUndo;
 document.getElementById('btnBack').onclick    = ()=>{ show('pagePick'); renderPick(); };
 document.getElementById('btnBackPick').onclick= ()=>{ show('pagePick'); renderPick(); };
+document.getElementById('btnResetAll').onclick  = resetAll;   // 选号页
+document.getElementById('btnResetAll2').onclick = resetAll;   // 我的视图
 document.getElementById('btnResetMe').onclick = ()=>{
   if(confirm('把你的进度清零，从你的第 1 步重新开始？')){ S.done[S.me] = 0; save(); renderMe(); }
 };
