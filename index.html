@@ -115,7 +115,7 @@
   <div id="pagePick">
     <div class="card">
       <div class="title">🏃 汉诺塔接力赛</div>
-      <div class="subtitle">5 层 · 31 步最快路线 · 5 人轮流各跑一步</div>
+      <div class="subtitle">4 层 · 15 步最快路线 · 5 人轮流各跑一步</div>
     </div>
     <div class="card">
       <div class="title" style="font-size:17px;">我是几号？</div>
@@ -169,19 +169,16 @@
 </div>
 
 <script>
-/* ===== 31 步最快路线：[步序, 源柱, 目标柱, 盘号(1最小~5最大)] ===== */
+/* ===== 15 步最快路线（4 层）：[步序, 源柱, 目标柱, 盘号(1最小~4最大)] ===== */
 const MOVES = [
-  [1,'A','C',1],[2,'A','B',2],[3,'C','B',1],[4,'A','C',3],[5,'B','A',1],[6,'B','C',2],
-  [7,'A','C',1],[8,'A','B',4],[9,'C','B',1],[10,'C','A',2],[11,'B','A',1],[12,'C','B',3],
-  [13,'A','C',1],[14,'A','B',2],[15,'C','B',1],[16,'A','C',5],[17,'B','A',1],[18,'B','C',2],
-  [19,'A','C',1],[20,'B','A',3],[21,'C','B',1],[22,'C','A',2],[23,'B','A',1],[24,'B','C',4],
-  [25,'A','C',1],[26,'A','B',2],[27,'C','B',1],[28,'A','C',3],[29,'B','A',1],[30,'B','C',2],
-  [31,'A','C',1]
+  [1,'A','B',1],[2,'A','C',2],[3,'B','C',1],[4,'A','B',3],[5,'C','A',1],[6,'C','B',2],
+  [7,'A','B',1],[8,'A','C',4],[9,'B','C',1],[10,'B','A',2],[11,'C','A',1],[12,'B','C',3],
+  [13,'A','B',1],[14,'A','C',2],[15,'B','C',1]
 ];
-const DISK_NAME = {1:'最小',2:'第2小',3:'中间',4:'第2大',5:'最大'};
-const DISK_W    = {1:36,2:48,3:60,4:72,5:84};
-const DISK_COLOR= {1:'var(--disk1)',2:'var(--disk2)',3:'var(--disk3)',4:'var(--disk4)',5:'var(--disk5)'};
-const KEY = 'hanoi-relay-v4';
+const DISK_NAME = {1:'最小',2:'第2小',3:'第3小',4:'最大'};
+const DISK_W    = {1:38,2:54,3:70,4:86};
+const DISK_COLOR= {1:'var(--disk1)',2:'var(--disk2)',3:'var(--disk3)',4:'var(--disk4)'};
+const KEY = 'hanoi-relay-v5';   // 换成 4 层，用新 key 避免旧进度残留
 
 /* ===== 状态（每台手机各存各的）===== */
 let S = {
@@ -204,8 +201,8 @@ function load(){
 
 /* ===== 塔状态推演 ===== */
 function stateAt(k){
-  const p = {A:[5,4,3,2,1], B:[], C:[]};   // 末尾为顶部（最小盘）
-  for(let i=0;i<k && i<31;i++){ const [,f,t] = MOVES[i]; p[t].push(p[f].pop()); }
+  const p = {A:[4,3,2,1], B:[], C:[]};   // 4 层，末尾为顶部（最小盘）
+  for(let i=0;i<k && i<MOVES.length;i++){ const [,f,t] = MOVES[i]; p[t].push(p[f].pop()); }
   return p;
 }
 function renderTowers(g){
