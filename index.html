@@ -142,7 +142,7 @@
   <div id="pageMe" class="hide">
     <div class="topbar">
       <button class="btn-back" id="btnBack">← 换人</button>
-      <div class="me-badge" id="meBadge">第 1 位 · 队员1</div>
+      <div class="me-badge" id="meBadge">第 1 位 · 方圆</div>
     </div>
 
     <div class="card" id="cardRun">
@@ -186,9 +186,13 @@ const DISK_W    = {1:38,2:54,3:70,4:86};
 const DISK_COLOR= {1:'var(--disk1)',2:'var(--disk2)',3:'var(--disk3)',4:'var(--disk4)'};
 const KEY = 'hanoi-relay-v5';   // 换成 4 层，用新 key 避免旧进度残留
 
+/* ===== 内置队员名单（1~5 号）===== */
+const DEFAULT_NAMES = ['方圆','杨子汉','陈衍升','陈言','郭家兴'];
+const LEGACY_NAMES  = ['队员1','队员2','队员3','队员4','队员5'];   // 旧版占位名，用于自动升级
+
 /* ===== 状态（每台手机各存各的）===== */
 let S = {
-  names:['队员1','队员2','队员3','队员4','队员5'],
+  names:DEFAULT_NAMES.slice(),
   me:null,               // 我选的序号 0-4
   done:[0,0,0,0,0],      // 各人已完成的步数（本机通常只推进自己那一项）
   voice:false, wake:true
@@ -248,7 +252,7 @@ function renderPick(){
     + '<div class="st">负责 '+t+' 步 · 已跑 '+d+' 步'+(d>=t?' · 已全部完成':'')+'</div></div>'
     + '<div class="go">'+(S.me===i?'我的 · 进入 ›':'选我 ›')+'</div>';
     div.querySelector('input').addEventListener('click', e=>e.stopPropagation());
-    div.querySelector('input').addEventListener('input', e=>{ S.names[i] = e.target.value || ('队员'+(i+1)); save(); });
+    div.querySelector('input').addEventListener('input', e=>{ S.names[i] = e.target.value || DEFAULT_NAMES[i]; save(); });
     div.addEventListener('click', ()=>pick(i));
     box.appendChild(div);
   });
@@ -327,7 +331,7 @@ function resetAll(){
   clearTimeout(armAllTimer); armedAll = false; setTxt(RESET_TXT);
   try{ localStorage.removeItem(KEY); }catch(e){}
   S = {
-    names:['队员1','队员2','队员3','队员4','队员5'],
+    names:DEFAULT_NAMES.slice(),
     me:null,
     done:[0,0,0,0,0],
     voice:S.voice, wake:S.wake     // 语音/常亮属于个人偏好，保留
@@ -397,6 +401,12 @@ document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && S.wak
 
 /* ===== 启动 ===== */
 load();
+// 老数据自动升级：如果还停留在占位名「队员N」，换成内置真名
+if(S.names.length===5 && S.names.every((n,i)=>n===LEGACY_NAMES[i])){
+  S.names = DEFAULT_NAMES.slice(); save();
+}
+// 防御旧版本残留的越界进度（4 层每人最多 3 步）
+S.done = S.done.map((v,i)=> Math.max(0, Math.min(v|0, mySteps(i).length)));
 document.getElementById('voiceOn').checked = S.voice;
 document.getElementById('wakeOn').checked  = S.wake;
 if(S.me != null){ show('pageMe'); renderMe(); }
