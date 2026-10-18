@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0f172a">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>汉诺塔接力赛 · 我的步骤</title>
 <style>
   :root{
@@ -155,7 +158,6 @@
         <button class="btn-sub" id="btnUndo">↩ 撤销上一步</button>
         <button class="btn-sub btn-gray" id="btnResetMe">⟲ 重置我的进度</button>
       </div>
-      <button class="btn-sub btn-gray" style="width:100%;margin-top:10px;" id="btnResetAll2">⟲ 重置到初始状态（清空全部）</button>
       <div class="tip">跑回来点绿按钮，自动切到你的下一步</div>
     </div>
 
@@ -165,6 +167,9 @@
       <button class="btn-block" id="btnBackPick">← 返回</button>
       <div class="tip">原地待命，等其他队友跑完剩下的步骤</div>
     </div>
+
+    <!-- 重置键放在卡片外：跑完自己的步骤后依然可点 -->
+    <button class="btn-sub btn-gray" style="width:100%;" id="btnResetAll2">⟲ 重置到初始状态</button>
   </div>
 
 </div>
@@ -289,9 +294,37 @@ function onDone(){
   if(myNext(i) === null){ renderFinish(i); return; }
   renderMe();
 }
-/* 重置到初始状态：清空所有人的进度、名字和选号，回到选号页 */
+/* 轻量提示条（不依赖 alert/confirm，手机内置浏览器也能显示） */
+function toast(msg){
+  let el = document.getElementById('toast');
+  if(!el){
+    el = document.createElement('div'); el.id = 'toast';
+    el.style.cssText = 'position:fixed;left:50%;top:16px;transform:translateX(-50%);z-index:99;'
+      + 'background:rgba(15,23,42,.94);color:#fff;padding:11px 18px;border-radius:14px;'
+      + 'font-size:15px;font-weight:800;box-shadow:0 6px 18px rgba(0,0,0,.3);display:none;max-width:86%;text-align:center;';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg; el.style.display = 'block';
+  clearTimeout(el._t); el._t = setTimeout(()=>{ el.style.display = 'none'; }, 2200);
+}
+
+/* 重置到初始状态：清空所有人的进度、名字和选号，回到选号页
+   不用 confirm（微信等内置浏览器会屏蔽弹窗），改为「点两次确认」 */
+const RESET_TXT = '⟲ 重置到初始状态';
+let armedAll = false, armAllTimer = null;
 function resetAll(){
-  if(!confirm('重置到初始状态？\n所有人的进度、名字和你的选号都会清空，回到刚打开的样子。')) return;
+  const b1 = document.getElementById('btnResetAll');
+  const b2 = document.getElementById('btnResetAll2');
+  const setTxt = t => { if(b1) b1.textContent = t; if(b2) b2.textContent = t; };
+
+  if(!armedAll){
+    armedAll = true;
+    setTxt('⚠️ 再点一次，确认清空');
+    clearTimeout(armAllTimer);
+    armAllTimer = setTimeout(()=>{ armedAll = false; setTxt(RESET_TXT); }, 4000);
+    return;
+  }
+  clearTimeout(armAllTimer); armedAll = false; setTxt(RESET_TXT);
   try{ localStorage.removeItem(KEY); }catch(e){}
   S = {
     names:['队员1','队员2','队员3','队员4','队员5'],
@@ -300,7 +333,27 @@ function resetAll(){
     voice:S.voice, wake:S.wake     // 语音/常亮属于个人偏好，保留
   };
   save();
+  document.getElementById('voiceOn').checked = S.voice;
+  document.getElementById('wakeOn').checked  = S.wake;
   show('pagePick'); renderPick();
+  toast('已重置到初始状态');
+  if(navigator.vibrate) navigator.vibrate([20,40,20]);
+}
+
+/* 只重置我自己的进度：同样用「点两次确认」 */
+const RESET_ME_TXT = '⟲ 重置我的进度';
+let armedMe = false, armMeTimer = null;
+function resetMe(){
+  const b = document.getElementById('btnResetMe');
+  if(!armedMe){
+    armedMe = true; b.textContent = '⚠️ 再点一次确认';
+    clearTimeout(armMeTimer);
+    armMeTimer = setTimeout(()=>{ armedMe = false; b.textContent = RESET_ME_TXT; }, 4000);
+    return;
+  }
+  clearTimeout(armMeTimer); armedMe = false; b.textContent = RESET_ME_TXT;
+  S.done[S.me] = 0; save(); renderMe();
+  toast('你的进度已清零');
 }
 function doUndo(){
   const i = S.me;
@@ -337,9 +390,7 @@ document.getElementById('btnBack').onclick    = ()=>{ show('pagePick'); renderPi
 document.getElementById('btnBackPick').onclick= ()=>{ show('pagePick'); renderPick(); };
 document.getElementById('btnResetAll').onclick  = resetAll;   // 选号页
 document.getElementById('btnResetAll2').onclick = resetAll;   // 我的视图
-document.getElementById('btnResetMe').onclick = ()=>{
-  if(confirm('把你的进度清零，从你的第 1 步重新开始？')){ S.done[S.me] = 0; save(); renderMe(); }
-};
+document.getElementById('btnResetMe').onclick   = resetMe;
 document.getElementById('voiceOn').onchange = e=>{ S.voice = e.target.checked; save(); };
 document.getElementById('wakeOn').onchange  = e=>{ S.wake = e.target.checked; save(); if(S.wake) keepAwake(); };
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && S.wake) keepAwake(); });
